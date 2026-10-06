@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Una Hora de Inglés</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: single column, phone-first; "today" card on top, week strip, then phases as a vertical ladder with checkable skills. */
+:root{
+  --bg:#F3F5F2; --surface:#FFFFFF; --fg:#17202B; --muted:#5E6B78; --line:#D9DED8;
+  --accent:#0F6E5C; --accent-ink:#FFFFFF; --accent-soft:#DDEFE9;
+  --warn:#B8541A; --warn-soft:#F7E6D9;
+  --done:#2F7D4F;
+  --display:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101519; --surface:#181F26; --fg:#E7ECEF; --muted:#9AA7B2; --line:#2A343D;
+    --accent:#3FB79C; --accent-ink:#0B1A16; --accent-soft:#163A33;
+    --warn:#E68A4F; --warn-soft:#3A2518; --done:#5CC387; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101519; --surface:#181F26; --fg:#E7ECEF; --muted:#9AA7B2; --line:#2A343D;
+  --accent:#3FB79C; --accent-ink:#0B1A16; --accent-soft:#163A33;
+  --warn:#E68A4F; --warn-soft:#3A2518; --done:#5CC387; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:680px;margin:0 auto;padding-inline:16px;padding-block:20px 56px;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:2rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.25rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:.9rem}
+header{display:flex;flex-direction:column;gap:6px}
+header .meta{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+/* Today */
+.today-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ring{width:64px;height:64px;flex:none;position:relative}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:6}
+.ring .track{stroke:var(--line)}
+.ring .bar{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .3s}
+.ring .num{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--mono);font-size:.8rem}
+.tasks{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.task{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:start;padding:10px 10px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:transparent}
+.task:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.task input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent);cursor:pointer}
+.task .t{font-weight:600}
+.task .d{font-size:.9rem;color:var(--muted);margin-top:2px}
+.task .min{font-family:var(--mono);font-size:.8rem;color:var(--muted);white-space:nowrap;padding-top:3px}
+.task.done .t{text-decoration:line-through;color:var(--muted)}
+.task.done{background:var(--accent-soft);border-color:transparent}
+.daypick{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}
+.daypick button{font-family:var(--mono);font-size:.78rem;padding:6px 10px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--fg);cursor:pointer}
+.daypick button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.daypick button.today{border-color:var(--accent);color:var(--accent)}
+.daypick button[aria-pressed="true"].today{background:var(--accent);color:var(--accent-ink)}
+.daypick button .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--done);margin-left:6px;vertical-align:middle}
+/* Rules */
+.rules{display:flex;flex-direction:column;gap:10px;margin:0;padding:0;list-style:none}
+.rules li{display:grid;grid-template-columns:auto 1fr;gap:10px}
+.rules .k{font-family:var(--mono);font-size:.75rem;color:var(--warn);padding-top:3px}
+/* Phases */
+.ladder{display:flex;flex-direction:column;gap:14px}
+.phase{border-left:3px solid var(--line);padding-left:14px;position:relative}
+.phase.current{border-left-color:var(--accent)}
+.phase.past{border-left-color:var(--done)}
+.phase-head{display:flex;flex-direction:column;gap:4px;cursor:pointer}
+.phase-head summary{list-style:none}
+.phase-head summary::-webkit-details-marker{display:none}
+.phase .when{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+.phase .tag{display:inline-block;font-family:var(--mono);font-size:.7rem;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:middle}
+.phase .goal{font-size:.95rem;margin-top:6px}
+.skills{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.skill{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start;font-size:.95rem;padding:6px 4px;border-radius:8px;cursor:pointer}
+.skill input{width:18px;height:18px;margin:3px 0 0;accent-color:var(--done)}
+.skill.done span{color:var(--muted);text-decoration:line-through}
+.skill-group{margin-top:10px}
+.skill-group .eyebrow{margin-bottom:4px}
+.milestone{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--warn-soft);color:var(--fg);font-size:.92rem;display:grid;grid-template-columns:auto 1fr;gap:10px}
+.milestone .k{font-family:var(--mono);font-size:.72rem;color:var(--warn);padding-top:3px;letter-spacing:.06em}
+.count{font-family:var(--mono);font-size:.78rem;color:var(--muted)}
+/* Resources */
+.res{display:grid;grid-template-columns:1fr;gap:10px;margin:0;padding:0;list-style:none}
+.res li{display:flex;flex-direction:column;gap:2px}
+.res a{color:var(--accent);font-weight:600;text-decoration:none}
+.res a:hover{text-decoration:underline}
+.res .for{font-size:.88rem;color:var(--muted)}
+footer{font-size:.85rem;color:var(--muted)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Plan de estudio · B1 → C1</p>
+  <h1>Una hora de inglés al día</h1>
+  <div class="meta">
+    <span id="today-label"></span>
+    <span id="week-label"></span>
+  </div>
+  <p class="muted small">Sesenta minutos, siete días. La estructura cambia según el día para que no sea siempre lo mismo. Marca lo que vayas haciendo; el progreso se guarda en este teléfono.</p>
+</header>
+
+<section class="card" id="today">
+  <div class="today-head">
+    <div>
+      <p class="eyebrow" id="session-eyebrow">Sesión de hoy</p>
+      <h2 id="session-title"></h2>
+      <p class="muted small" id="session-sub"></p>
+    </div>
+    <div class="ring" aria-hidden="true">
+      <svg viewBox="0 0 64 64"><circle class="track" cx="32" cy="32" r="27"></circle><circle class="bar" id="ring-bar" cx="32" cy="32" r="27" stroke-dasharray="169.6" stroke-dashoffset="169.6"></circle></svg>
+      <div class="num" id="ring-num">0/60</div>
+    </div>
+  </div>
+  <ul class="tasks" id="tasks"></ul>
+  <div class="daypick" id="daypick" role="group" aria-label="Elegir día de la semana"></div>
+</section>
+
+<section>
+  <h2>Reglas que no se negocian</h2>
+  <ul class="rules" style="margin-top:12px">
+    <li><span class="k">01</span><span>Hablar en voz alta todos los días. Es tu punto débil y no se arregla leyendo. Un día sin hablar cuenta como día perdido.</span></li>
+    <li><span class="k">02</span><span>Subtítulos solo en inglés. Nunca en español. A partir de la semana 5, sin subtítulos en la serie del jueves.</span></li>
+    <li><span class="k">03</span><span>Lo que escribes se corrige el mismo día. Sin corrección no hay avance, solo repetición de errores.</span></li>
+    <li><span class="k">04</span><span>Las tarjetas de Anki salen de lo que tú leíste o escuchaste. Nada de listas de otros.</span></li>
+    <li><span class="k">05</span><span>Si solo tienes 20 minutos, haz la parte de hablar y Anki. Lo demás puede esperar; la racha no.</span></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Qué deberías saber y cuándo</h2>
+  <p class="muted small" style="margin-top:6px">Cada fase lista lo que debes dominar antes de pasar a la siguiente. Marca una destreza solo cuando puedas hacerla sin pensar, no cuando la "entiendes".</p>
+  <div class="ladder" id="ladder" style="margin-top:14px"></div>
+</section>
+
+<section>
+  <h2>Herramientas, todas gratis</h2>
+  <ul class="res" style="margin-top:12px">
+    <li><a href="https://www.bbc.co.uk/learningenglish/english/features/6-minute-english" target="_blank" rel="noopener">BBC 6 Minute English</a><span class="for">Podcast corto con transcripción. Para los martes de las fases 0 y 1.</span></li>
+    <li><a href="https://youglish.com/" target="_blank" rel="noopener">YouGlish</a><span class="for">Busca una palabra y la oyes en cientos de videos reales. Para shadowing y pronunciación.</span></li>
+    <li><a href="https://writeandimprove.com/" target="_blank" rel="noopener">Write &amp; Improve (Cambridge)</a><span class="for">Corrige tus textos al instante y les pone nivel CEFR. Úsalo cada día en el bloque de escritura.</span></li>
+    <li><a href="https://apps.ankiweb.net/" target="_blank" rel="noopener">Anki</a><span class="for">Repetición espaciada. Crea tarjetas con la frase completa donde encontraste la palabra, no la palabra sola.</span></li>
+    <li><a href="https://www.tandem.net/" target="_blank" rel="noopener">Tandem</a> / <a href="https://www.hellotalk.com/" target="_blank" rel="noopener">HelloTalk</a><span class="for">Intercambio con nativos por voz. Para la conversación de los viernes.</span></li>
+    <li><a href="https://www.cambridgeenglish.org/exams-and-tests/first/preparation/" target="_blank" rel="noopener">Exámenes de muestra B2 First</a> · <a href="https://www.cambridgeenglish.org/exams-and-tests/advanced/preparation/" target="_blank" rel="noopener">C1 Advanced</a><span class="for">Partes reales de examen para los sábados.</span></li>
+    <li><a href="https://www.englishclub.com/reading/graded-readers.php" target="_blank" rel="noopener">Lecturas graduadas</a><span class="for">Empieza por nivel 4 o 5 (B1/B2) y sube un nivel cada seis semanas.</span></li>
+  </ul>
+</section>
+
+<footer>
+  <p>Plan iniciado el 6 de octubre de 2026. Claude puede corregir tus textos, evaluar tus grabaciones transcritas y armar simulacros; úsalo como tutor exigente, no como diccionario.</p>
+</footer>
+</div>
+
+<script>
+(function(){
+  var START = new Date(2026,9,6); // 6 oct 2026
+  var DAYS = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  var DAYS_LONG = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+  var MONTHS = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  // Sessions by weekday (0 = Sunday). Each sums to 60 minutes.
+  var SESSIONS = {
+    1:{title:'Pronunciación y ritmo',sub:'Shadowing: imitar a un nativo frase por frase.',tasks:[
+      ['Ver un video de 5 a 8 minutos con subtítulos en inglés',15,'YouTube, un tema que te guste. Anota 5 expresiones nuevas.'],
+      ['Shadowing del mismo video',15,'Pausa cada frase, repítela imitando ritmo y entonación. Grábate los últimos 3 minutos.'],
+      ['Escribir 150 palabras: resumen del video',15,'Pégalo en Write & Improve y corrige los errores que marque.'],
+      ['Anki: crear 5 tarjetas y repasar',10,'Frase completa en el frente, significado atrás.'],
+      ['Escuchar tu grabación y anotar 3 sonidos a mejorar',5,'Compara con el original.']
+    ]},
+    2:{title:'Oído y resumen oral',sub:'Podcast sin transcripción, después monólogo grabado.',tasks:[
+      ['Escuchar un podcast 2 veces sin leer la transcripción',15,'Fase 0 y 1: BBC 6 Minute English. Fase 2 en adelante: podcasts para nativos.'],
+      ['Monólogo grabado de 5 minutos: cuenta lo que entendiste',10,'Sin pausar la grabación. Si te trabas, parafrasea.'],
+      ['Leer la transcripción y comparar con lo que entendiste',10,'Subraya lo que no captaste y por qué (velocidad, vocabulario, acento).'],
+      ['Escribir 150 palabras: tu opinión sobre el tema',15,'Corregir en Write & Improve.'],
+      ['Anki: 5 tarjetas nuevas y repaso',10,'']
+    ]},
+    3:{title:'Lectura y vocabulario',sub:'Libro en inglés. Vocabulario en contexto.',tasks:[
+      ['Leer 20 minutos del libro actual',20,'Sin diccionario la primera vez. Marca palabras que se repiten.'],
+      ['Leer en voz alta una página y grabarte',10,'Fluidez y pronunciación, no velocidad.'],
+      ['Buscar las 8 palabras marcadas en YouGlish y escucharlas',10,'Elige 5 para Anki.'],
+      ['Escribir 150 palabras: qué pasó en el capítulo',10,'Usa al menos 3 de las palabras nuevas. Corregir.'],
+      ['Anki: tarjetas nuevas y repaso',10,'']
+    ]},
+    4:{title:'Serie y monólogo',sub:'Comprensión real a velocidad real.',tasks:[
+      ['Ver un episodio de 20 minutos (sitcom) con subtítulos en inglés',20,'Desde la semana 5: sin subtítulos la primera vez.'],
+      ['Monólogo grabado de 5 minutos: tema al azar',10,'Ejemplos: una decisión difícil que tomaste, cómo funciona algo que sabes hacer, qué cambiarías de tu ciudad.'],
+      ['Escucharte y reescribir 5 frases donde te trabaste',10,'Dilas de nuevo en voz alta, bien, tres veces.'],
+      ['Escribir 150 palabras sobre el mismo tema del monólogo',10,'Corregir en Write & Improve.'],
+      ['Anki: tarjetas nuevas y repaso',10,'']
+    ]},
+    5:{title:'Conversación real',sub:'Hablar con alguien de verdad. Lo que más te costó en clase.',tasks:[
+      ['Preparar 5 preguntas y 3 temas para la conversación',5,'En inglés, escritas.'],
+      ['Conversación por voz con un nativo o intercambio',30,'Tandem, HelloTalk o un tutor. Mínimo 30 minutos, cámara o solo audio.'],
+      ['Anotar 5 errores o palabras que te faltaron',10,'Pregúntale a tu compañero o a Claude cómo se dice.'],
+      ['Anki: tarjetas con esas 5 frases y repaso',10,''],
+      ['Escribir 3 frases que usarás la próxima vez',5,'']
+    ]},
+    6:{title:'Simulacro de examen',sub:'Una parte del examen objetivo, cronometrada.',tasks:[
+      ['Una parte de examen (Reading o Listening) con cronómetro',30,'Fase 0 a 2: B2 First. Fase 3: C1 Advanced. Alterna cada sábado.'],
+      ['Corregir con la clave y anotar el porcentaje',10,'Guarda el resultado. Debe subir cada mes.'],
+      ['Speaking Part 1 grabado: 3 minutos de preguntas personales',10,'Usa las preguntas de muestra. Escúchate.'],
+      ['Anki: repaso largo',10,'Todo lo pendiente de la semana.']
+    ]},
+    0:{title:'Repaso ligero',sub:'Consolidar la semana. Día de menor intensidad, no de cero.',tasks:[
+      ['Releer tus 6 textos corregidos de la semana',15,'Reescribe los 3 errores más repetidos en una lista de "nunca más".'],
+      ['Ver o escuchar algo por puro gusto en inglés',25,'Película, documental, videojuego. Sin tomar notas.'],
+      ['Monólogo grabado de 5 minutos: resumen de tu semana',10,'Usa pasado y presente perfecto.'],
+      ['Anki: repaso',10,'']
+    ]}
+  };
+
+  var PHASES = [
+    {id:'f0',name:'Fase 0 · Reactivación',from:new Date(2026,9,6),to:new Date(2026,9,19),when:'6 oct → 19 oct 2026 · semanas 1–2',
+     goal:'Volver a encender el inglés después de cinco meses. Recuperar lo que ya sabías y crear el hábito de hablar a diario.',
+     groups:[
+      {label:'Gramática que debes tener automática (B1)',items:['Present perfect vs past simple sin dudar ("I have lived here for…" / "I moved here in…")','Condicionales 0, 1 y 2','Modales: should, must, might, could, have to','Comparativos y superlativos, incluidos irregulares','Preguntas indirectas: "Could you tell me where…"']},
+      {label:'Habilidades',items:['Hablar 5 minutos seguidos sobre tu día sin cambiar al español','Entender un video de YouTube con subtítulos en inglés sin pausar','Escribir 150 palabras sin ayuda en 15 minutos','Tener Anki instalado con al menos 50 tarjetas propias']}
+     ],
+     milestone:'Haber hecho las 7 sesiones de la semana 2 completas. Sin eso no pases a la fase 1.'},
+    {id:'f1',name:'Fase 1 · Cerrar B1, abrir B2',from:new Date(2026,9,20),to:new Date(2026,11,20),when:'20 oct → 20 dic 2026 · semanas 3–11',
+     goal:'Terminar lo que el libro de B1 cubría, pero a través de uso real. Al final de esta fase ya no eres B1.',
+     groups:[
+      {label:'Gramática',items:['Past perfect para ordenar eventos en el pasado','Reported speech: "She said she would call"','Used to / would para hábitos pasados','Pasiva en presente y pasado','Pronombres relativos: who, which, that, where, whose','50 phrasal verbs de alta frecuencia usados en tus propias frases (get on, give up, look after, turn out, come up with…)']},
+      {label:'Habilidades',items:['Entender BBC 6 Minute English sin transcripción al 90%','Mantener una conversación de 15 minutos con un nativo sin bloquearte','Escribir un email formal y uno informal de 150 palabras con el registro correcto','Narrar una historia pasada de 3 minutos con past simple, continuous y perfect mezclados','Leer un libro graduado nivel B1/B2 completo','1000 tarjetas de Anki propias']}
+     ],
+     milestone:'Simulacro completo de B2 First (Reading, Listening, Writing, Speaking) la semana del 14 de diciembre. Nota objetivo: 50% o más.'},
+    {id:'f2',name:'Fase 2 · B2 sólido',from:new Date(2027,0,4),to:new Date(2027,3,30),when:'4 ene → 30 abr 2027 · semanas 14–30',
+     goal:'Dejar de traducir. Entender series sin subtítulos y sostener opiniones sobre temas abstractos.',
+     groups:[
+      {label:'Gramática y léxico',items:['Condicional 3 y mixtos: "If I had studied, I would be fluent now"','Wish / if only / would rather','Inversión básica: "Not only did he…", "Never have I…"','Pasiva con modales e infinitivos: "It is said to be…"','Collocations de verbo + sustantivo (make a decision, take responsibility, raise an issue)','Conectores de discurso: however, whereas, although, despite, in spite of, as long as','2000 palabras activas (las usas, no solo las reconoces)']},
+      {label:'Habilidades',items:['Ver una sitcom sin subtítulos y entender el 80%','Escribir un essay de 250 palabras con introducción, dos argumentos y conclusión en 40 minutos','Hablar 5 minutos sobre un tema abstracto (educación, tecnología, dinero) con ejemplos','Entender un podcast para nativos a velocidad normal (ej. "Stuff You Should Know")','Leer una novela juvenil original (no graduada) completa','Conversación de 30 minutos donde el otro no tenga que ir despacio']}
+     ],
+     milestone:'Presentar B2 First real (o simulacro completo con 70%+) en abril de 2027. Si no llegas al 70%, extiende esta fase, no la saltes.'},
+    {id:'f3',name:'Fase 3 · Hacia C1',from:new Date(2027,4,3),to:new Date(2027,6,31),when:'3 may → 31 jul 2027 · semanas 31–43',
+     goal:'Precisión y naturalidad. Ya entiendes casi todo; ahora se trata de sonar como alguien que piensa en inglés.',
+     groups:[
+      {label:'Léxico y registro',items:['Cambiar de registro formal a informal a voluntad (ask for / request, kids / children, a lot / a considerable amount)','Idioms y expresiones frecuentes usadas con naturalidad (no forzadas)','Matices: "fairly / quite / rather / pretty", "suggest / imply / hint"','Énfasis con cleft sentences: "What I need is…", "It was John who…"','4000 palabras activas']},
+      {label:'Habilidades',items:['Entender acentos variados (británico, americano, australiano, indio) en entrevistas reales','Leer una novela para adultos o no ficción (ej. Sapiens) sin diccionario','Hablar 10 minutos sobre un tema abstracto con estructura, matices y sin pausas largas','Escribir un report o proposal de 250 palabras con formato correcto','Resumir oralmente un artículo largo en 2 minutos','Escuchar una charla TED y reconstruir el argumento completo']}
+     ],
+     milestone:'C1 Advanced o IELTS Academic (objetivo banda 7) en julio de 2027. Reserva la fecha del examen en mayo para que no sea opcional.'},
+    {id:'f4',name:'Fase 4 · C2',from:new Date(2027,7,1),to:new Date(2028,11,31),when:'ago 2027 → 2028',
+     goal:'Dominio. Humor, ironía, textos técnicos y literarios, hablar en público.',
+     groups:[
+      {label:'Habilidades',items:['Entender humor y dobles sentidos en comedia stand-up','Leer prensa de opinión (The Economist, The Atlantic) y debatirla','Dar una presentación de 15 minutos en inglés y responder preguntas','Escribir con estilo propio: 500 palabras que un nativo lea sin notar que no lo eres','Trabajar o estudiar íntegramente en inglés sin esfuerzo consciente']}
+     ],
+     milestone:'C2 Proficiency en 2028. A este nivel el plan de una hora es mantenimiento; el inglés ya es parte de tu vida.'}
+  ];
+
+  // ---------- storage ----------
+  function load(k){try{return JSON.parse(localStorage.getItem(k))||{}}catch(e){return {}}}
+  function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+  var doneTasks = load('ue_tasks');   // {dateKey: {idx:true}}
+  var doneSkills = load('ue_skills'); // {skillId:true}
+
+  function dateKey(d){return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()}
+  function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x}
+
+  var today = new Date(); today.setHours(0,0,0,0);
+  var selected = new Date(today);
+
+  // header
+  var weekNum = Math.max(1,Math.floor((today-START)/(7*864e5))+1);
+  document.getElementById('today-label').textContent = DAYS_LONG[today.getDay()]+' '+today.getDate()+' '+MONTHS[today.getMonth()]+' '+today.getFullYear();
+  document.getElementById('week-label').textContent = today<START ? 'empieza el 6 oct' : 'semana '+weekNum+' del plan';
+
+  // ---------- today card ----------
+  function renderSession(){
+    var s = SESSIONS[selected.getDay()];
+    var key = dateKey(selected);
+    var done = doneTasks[key]||{};
+    var isToday = key===dateKey(today);
+    document.getElementById('session-eyebrow').textContent = isToday ? 'Sesión de hoy · '+DAYS_LONG[selected.getDay()] : 'Sesión del '+DAYS_LONG[selected.getDay()]+' '+selected.getDate()+' '+MONTHS[selected.getMonth()];
+    document.getElementById('session-title').textContent = s.title;
+    document.getElementById('session-sub').textContent = s.sub;
+    var ul = document.getElementById('tasks'); ul.innerHTML='';
+    var mins=0,total=0;
+    s.tasks.forEach(function(t,i){
+      total+=t[1];
+      var li=document.createElement('li'); li.className='task'+(done[i]?' done':'');
+      var id='task-'+selected.getDay()+'-'+i;
+      li.innerHTML='<input type="checkbox" id="'+id+'" '+(done[i]?'checked':'')+'><div><label class="t" for="'+id+'">'+t[0]+'</label>'+(t[2]?'<div class="d">'+t[2]+'</div>':'')+'</div><span class="min">'+t[1]+' min</span>';
+      if(done[i]) mins+=t[1];
+      var cb=li.querySelector('input');
+      li.addEventListener('click',function(e){ if(e.target.tagName==='INPUT'||e.target.tagName==='LABEL') return; cb.checked=!cb.checked; cb.dispatchEvent(new Event('change')); });
+      cb.addEventListener('change',function(){
+        done=doneTasks[key]=doneTasks[key]||{};
+        if(cb.checked) done[i]=true; else delete done[i];
+        save('ue_tasks',doneTasks); renderSession(); renderDays();
+      });
+      ul.appendChild(li);
+    });
+    var pct=total?mins/total:0;
+    document.getElementById('ring-bar').style.strokeDashoffset = (169.6*(1-pct)).toFixed(1);
+    document.getElementById('ring-num').textContent = mins+'/'+total;
+  }
+
+  function weekStart(d){var x=new Date(d);var dow=(x.getDay()+6)%7;x.setDate(x.getDate()-dow);return x}
+  function renderDays(){
+    var wrap=document.getElementById('daypick'); wrap.innerHTML='';
+    var ws=weekStart(today);
+    for(var i=0;i<7;i++){
+      var d=addDays(ws,i); var key=dateKey(d); var s=SESSIONS[d.getDay()];
+      var done=doneTasks[key]||{}; var all=s.tasks.length>0 && s.tasks.every(function(_,j){return done[j]});
+      var b=document.createElement('button'); b.type='button';
+      b.className=(key===dateKey(today)?'today':''); b.setAttribute('aria-pressed',key===dateKey(selected)?'true':'false');
+      b.innerHTML=DAYS[d.getDay()]+' '+d.getDate()+(all?'<span class="dot" aria-label="completado"></span>':'');
+      (function(dd){b.addEventListener('click',function(){selected=dd;renderSession();renderDays();})})(d);
+      wrap.appendChild(b);
+    }
+  }
+
+  // ---------- phases ----------
+  function renderLadder(){
+    var root=document.getElementById('ladder'); root.innerHTML='';
+    PHASES.forEach(function(p){
+      var state = today>p.to ? 'past' : (today>=p.from ? 'current' : 'future');
+      var allItems=[]; p.groups.forEach(function(g,gi){g.items.forEach(function(it,ii){allItems.push(p.id+'-'+gi+'-'+ii)})});
+      var doneCount=allItems.filter(function(id){return doneSkills[id]}).length;
+      var det=document.createElement('details'); det.className='phase '+state; det.open = state==='current';
+      var html='<summary class="phase-head"><div><span class="when">'+p.when+'</span>'+(state==='current'?'<span class="tag">ahora</span>':'')+'</div><h3>'+p.name+'</h3><span class="count">'+doneCount+'/'+allItems.length+' destrezas dominadas · toca para '+(det.open?'cerrar':'abrir')+'</span><p class="goal">'+p.goal+'</p></summary>';
+      p.groups.forEach(function(g,gi){
+        html+='<div class="skill-group"><p class="eyebrow">'+g.label+'</p><ul class="skills">';
+        g.items.forEach(function(it,ii){
+          var id=p.id+'-'+gi+'-'+ii; var d=!!doneSkills[id];
+          html+='<li class="skill'+(d?' done':'')+'"><input type="checkbox" id="'+id+'" '+(d?'checked':'')+'><span><label for="'+id+'">'+it+'</label></span></li>';
+        });
+        html+='</ul></div>';
+      });
+      html+='<div class="milestone"><span class="k">HITO</span><span>'+p.milestone+'</span></div>';
+      det.innerHTML=html;
+      det.querySelectorAll('.skill input').forEach(function(cb){
+        cb.addEventListener('change',function(){
+          if(cb.checked) doneSkills[cb.id]=true; else delete doneSkills[cb.id];
+          save('ue_skills',doneSkills);
+          cb.closest('.skill').classList.toggle('done',cb.checked);
+          var n=det.querySelectorAll('.skill input:checked').length;
+          det.querySelector('.count').textContent=n+'/'+allItems.length+' destrezas dominadas · toca para '+(det.open?'cerrar':'abrir');
+        });
+      });
+      det.addEventListener('toggle',function(){
+        var n=det.querySelectorAll('.skill input:checked').length;
+        det.querySelector('.count').textContent=n+'/'+allItems.length+' destrezas dominadas · toca para '+(det.open?'cerrar':'abrir');
+      });
+      root.appendChild(det);
+    });
+  }
+
+  renderSession(); renderDays(); renderLadder();
+})();
+</script>
+</body>
+</html>
